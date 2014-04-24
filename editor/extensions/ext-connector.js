@@ -38,6 +38,7 @@ svgEditor.addExtension("Connector", function(S) {
 			{"id": "mode_connect", "title": "Connecter deux objets"}
 		]
 	};
+	
 
 	function getBBintersect(x, y, bb, offset) {
 		if(offset) {
@@ -83,7 +84,7 @@ svgEditor.addExtension("Connector", function(S) {
 	function showPanel(on) {
 		var conn_rules = $('#connector_rules');
 		if(!conn_rules.length) {
-			conn_rules = $('<style id="connector_rules"></style>').appendTo('head');
+			conn_rules = $('<style id="connector_rules"><\/style>').appendTo('head');
 		} 
 		conn_rules.text(!on?"":"#tool_clone, #tool_topath, #tool_angle, #xy_panel { display: none !important; }");
 		$('#connector_panel').toggle(on);
@@ -302,6 +303,7 @@ svgEditor.addExtension("Connector", function(S) {
 //		});
 
 	return {
+
 		name: "Connector",
 		svgicons: svgEditor.curConfig.imgPath + "conn.svg",
 		buttons: [{
@@ -316,8 +318,10 @@ svgEditor.addExtension("Connector", function(S) {
 			},
 			events: {
 				'click': function() {
+					$("#mode_connect").addClass("flyout_button");
 					svgCanvas.setMode("connector");
 				}
+				
 			}
 		}],
 		addLangData: function(lang) {

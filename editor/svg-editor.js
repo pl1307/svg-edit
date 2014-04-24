@@ -1,4 +1,4 @@
-/*globals saveAs:true, svgEditor:true, globalStorage, widget, svgedit, canvg, jsPDF, svgElementToPdf, jQuery, $, DOMParser, FileReader, URL */
+/*globals svgEditor:true, globalStorage, widget, svgedit, canvg, jQuery, $, DOMParser, FileReader */
 /*jslint vars: true, eqeq: true, todo: true, forin: true, continue: true, regexp: true */
 /*
  * svg-editor.js
@@ -19,15 +19,19 @@
 // 3) svgcanvas.js
 
 /*
-TODOS
+TO-DOS
 1. JSDoc
 */
+
 
 (function() {
 
 	if (window.svgEditor) {
 		return;
 	}
+	
+
+	
 	window.svgEditor = (function($) {
 		var editor = {};
 		// EDITOR PROPERTIES: (defined below)
@@ -113,7 +117,7 @@ TODOS
 					opacity: 1
 				},
 				initOpacity: 1,
-				colorPickerCSS: null, // Defaults to 'left' with a position equal to that of the fill_color or stroke_color element minus 140, and a 'bottom' equal to 40
+				colorPickerCSS: null,
 				initTool: 'select',
 				wireframe: false,
 				showlayers: false,
@@ -200,20 +204,6 @@ TODOS
 					callback(false);
 				});
 			}
-		}
-		
-		function checkCanvg (callCanvg) {
-			return function (win, data) {
-				if (window.canvg) {
-					callCanvg(win, data);
-				} else { // Might not be set up yet
-					$.getScript('canvg/rgbcolor.js', function() {
-						$.getScript('canvg/canvg.js', function() {
-							callCanvg(win, data);
-						});
-					});
-				}
-			};
 		}
 
 		/**
@@ -405,7 +395,7 @@ TODOS
 		*	- inform user of any issues supplied via the "issues" property
 		*	- convert the "svg" property SVG string into an image for export;
 		*		utilize the properties "type" (currently 'PNG', 'JPEG', 'BMP',
-		*		'WEBP', 'PDF'), "mimeType", and "quality" (for 'JPEG' and 'WEBP'
+		*		'WEBP'), "mimeType", and "quality" (for 'JPEG' and 'WEBP'
 		*		types) to determine the proper output.
 		*/
 		editor.setCustomHandlers = function (opts) {
@@ -419,8 +409,8 @@ TODOS
 					editor.showSaveWarning = false;
 					svgCanvas.bind('saved', opts.save);
 				}
-				if (opts.exportImage) {
-					svgCanvas.bind('exported', checkCanvg(opts.exportImage));
+				if (opts.exportImage || opts.pngsave) { // Deprecating pngsave
+					svgCanvas.bind('exported', opts.exportImage || opts.pngsave);
 				}
 				customHandlers = opts;
 			});
@@ -501,7 +491,7 @@ TODOS
 						}
 					);
 
-					editor.setConfig(urldata, {overwrite: false}); // Note: source and url (as with storagePrompt later) are not set on config but are used below
+					editor.setConfig(urldata, {overwrite: false}); // Note: source, url, and paramurl (as with storagePrompt later) are not set on config but are used below
 					
 					setupCurConfig();
 
@@ -515,10 +505,17 @@ TODOS
 						}
 						if (src) {
 							if (src.indexOf('data:') === 0) {
+								// plusses get replaced by spaces, so re-insert
+								src = src.replace(/ /g, '+');
 								editor.loadFromDataURI(src);
 							} else {
 								editor.loadFromString(src);
 							}
+							return;
+						}
+						if (qstr.indexOf('paramurl=') !== -1) {
+							// Get parameter URL (use full length of remaining location.href)
+							editor.loadFromURL(qstr.substr(9));
 							return;
 						}
 						if (urldata.url) {
@@ -903,7 +900,7 @@ TODOS
 				$.select = function(msg, opts, cb, changeCb, txt, checkbox) { dbox('select', msg, cb, txt, opts, changeCb, checkbox);};
 			}());
 
-			var setSelectMode = function() {
+			var setSelectMode = function() {			//toogle selected button
 				var curr = $('.tool_button_current');
 				if (curr.length && curr[0].id !== 'tool_select') {
 					curr.removeClass('tool_button_current').addClass('tool_button');
@@ -1078,66 +1075,18 @@ TODOS
 				}
 			};
 
-			// Export global for use by jsPDF
-			saveAs = function (blob, options) {
-				var blobUrl = URL.createObjectURL(blob);
-				try {
-					// This creates a bookmarkable data URL,
-					// but it doesn't currently work in
-					// Firefox, and although it works in Chrome,
-					// Chrome doesn't make the full "data:" URL
-					// visible unless you right-click to "Inspect
-					// element" and then right-click on the element
-					// to "Copy link address".
-					var xhr = new XMLHttpRequest();
-					xhr.responseType = 'blob';
-					xhr.onload = function() {
-						var recoveredBlob = xhr.response;
-						var reader = new FileReader();
-						reader.onload = function() {
-							var blobAsDataUrl = reader.result;
-							exportWindow.location.href = blobAsDataUrl;
-						};
-						reader.readAsDataURL(recoveredBlob);
-					};
-					xhr.open('GET', blobUrl);
-					xhr.send();
-				}
-				catch (e) {
-					exportWindow.location.href = blobUrl;
-				}
-			};
-
 			var exportHandler = function(win, data) {
 				var issues = data.issues,
 					type = data.type || 'PNG',
 					dataURLType = (type === 'ICO' ? 'BMP' : type).toLowerCase();
 
-				exportWindow = window.open('', data.exportWindowName); // A hack to get the window via JSON-able name without opening a new one
 				if (!$('#export_canvas').length) {
 					$('<canvas>', {id: 'export_canvas'}).hide().appendTo('body');
 				}
 				var c = $('#export_canvas')[0];
-				if (type === 'PDF') {
-					var res = svgCanvas.getResolution();
-					var orientation = res.w > res.h ? 'landscape' : 'portrait';
-					var units = 'pt'; // curConfig.baseUnit; // We could use baseUnit, but that is presumably not intended for export purposes
-					var doc = new jsPDF(orientation, units, [res.w, res.h]); // Todo: Give options to use predefined jsPDF formats like "a4", etc. from pull-down (with option to keep customizable)
-					var docTitle = svgCanvas.getDocumentTitle();
-					doc.setProperties({
-						title: docTitle/*,
-						subject: '',
-						author: '',
-						keywords: '',
-						creator: ''*/
-					});
-					svgElementToPdf(data.svg, doc, {});
-					doc.save(docTitle + '.pdf');
-					return;
-				}
+
 				c.width = svgCanvas.contentW;
 				c.height = svgCanvas.contentH;
-				
 				canvg(c, data.svg, {renderCallback: function() {
 					var datauri = data.quality ? c.toDataURL('image/' + dataURLType, data.quality) : c.toDataURL('image/' + dataURLType);
 					exportWindow.location.href = datauri;
@@ -1186,13 +1135,17 @@ TODOS
 			// - removes the tool_button_current class from whatever tool currently has it
 			// - hides any flyouts
 			// - adds the tool_button_current class to the button passed in
-			var toolButtonClick = editor.toolButtonClick = function(button, noHiding) {
+			var toolButtonClick = editor.toolButtonClick = function(button) {
 				if ($(button).hasClass('disabled')) {return false;}
 				if ($(button).parent().hasClass('tools_flyout')) {return true;}
 				var fadeFlyouts = 'normal';
-				if (!noHiding) {
-					$('.tools_flyout').fadeOut(fadeFlyouts);
-				}
+				//if (!noHiding) {
+					$('.tools_flyout', '.flyout_arrow_horiz').toggle();
+					$('.flyout_button').click(function() {
+						  $(this).parent().hide();
+					});
+					
+				//}
 				$('#styleoverrides').text('');
 				workarea.css('cursor', 'auto');
 				$('.tool_button_current').removeClass('tool_button_current').addClass('tool_button');
@@ -2149,7 +2102,7 @@ TODOS
 								holder.css('left', l).show();
 							}
 							holder.data('shown_popop', true);
-						},time);
+						},0); //time to prevent delay
 						evt.preventDefault();
 					}).mouseup(function(evt) {
 						clearTimeout(timer);
@@ -2306,7 +2259,7 @@ TODOS
 //						'height': {s: '22px', l: '42px', xl: '64px'}
 //					},
 					'#tools_top': {
-						'left': 50 + $('#main_button').width(),
+						'left': 50,
 						'height': 72
 					},
 					'#tools_left': {
@@ -2403,7 +2356,7 @@ TODOS
 
 				var rule_elem = $('#tool_size_rules');
 				if (!rule_elem.length) {
-					rule_elem = $('<style id="tool_size_rules"></style>').appendTo('head');
+					rule_elem = $('<style id="tool_size_rules"><\/style>').appendTo('head');
 				} else {
 					rule_elem.empty();
 				}
@@ -2564,10 +2517,10 @@ TODOS
 							html = '<label' + cont_id + '>'
 								+ '<select id="' + tool.id + '">';
 							$.each(tool.options, function(val, text) {
-								var sel = (val == tool.defval) ? ' selected' : '';
+								var sel = (val == tool.defval) ? " selected":"";
 								html += '<option value="'+val+'"' + sel + '>' + text + '</option>';
 							});
-							html += '</select></label>';
+							html += "</select></label>";
 							// Creates the tool, hides & adds it, returns the select element
 							var sel = $(html).appendTo(panel).find('select');
 
@@ -2602,7 +2555,7 @@ TODOS
 								+ '<span id="' + tool.id + '_label">'
 								+ tool.label + ':</span>'
 								+ '<input id="' + tool.id + '" title="' + tool.title
-								+ '" size="' + (tool.size || '4') + '" value="' + (tool.defval || '') + '" type="text"/></label>';
+								+ '" size="' + (tool.size || "4") + '" value="' + (tool.defval || "") + '" type="text"/></label>';
 
 							// Creates the tool, hides & adds it, returns the select element
 
@@ -2786,17 +2739,17 @@ TODOS
 							// TODO: Find way to set the current icon using the iconloader if this is not default
 
 							// Include data for extension button as well as ref button
-							cur_h = holders['#' + flyout_holder[0].id] = [{
-								sel: '#' + id,
+							cur_h = holders['#'+flyout_holder[0].id] = [{
+								sel: '#'+id,
 								fn: btn.events.click,
 								icon: btn.id,
 								key: btn.key,
-								isDefault: btn.includeWith ? btn.includeWith.isDefault : 0
+								isDefault: btn.includeWith?btn.includeWith.isDefault:0
 							}, ref_data];
 
 							// {sel:'#tool_rect', fn: clickRect, evt: 'mouseup', key: 4, parent: '#tools_rect', icon: 'rect'}
 
-							var pos = ('position' in opts) ? opts.position : 'last';
+							var pos  = ('position' in opts) ? opts.position : 'last';
 							var len = flyout_holder.children().length;
 
 							// Add at given position or end
@@ -2896,7 +2849,7 @@ TODOS
 			svgCanvas.bind('transition', elementTransition);
 			svgCanvas.bind('changed', elementChanged);
 			svgCanvas.bind('saved', saveHandler);
-			svgCanvas.bind('exported', checkCanvg(exportHandler));
+			svgCanvas.bind('exported', exportHandler);
 			svgCanvas.bind('zoomed', zoomChanged);
 			svgCanvas.bind('contextset', contextChanged);
 			svgCanvas.bind('extension_added', extAdded);
@@ -3638,21 +3591,26 @@ TODOS
 					// See http://kangax.github.io/jstests/toDataUrl_mime_type_test/ for a useful list of MIME types and browser support
 					// 'ICO', // Todo: Find a way to preserve transparency in SVG-Edit if not working presently and do full packaging for x-icon; then switch back to position after 'PNG'
 					'PNG',
-					'JPEG', 'BMP', 'WEBP', 'PDF'
+					'JPEG', 'BMP', 'WEBP'
 				], function (imgType) { // todo: replace hard-coded msg with uiStrings.notification.
 					if (!imgType) {
 						return;
 					}
 					// Open placeholder window (prevents popup)
-					if (!customHandlers.exportImage) {
+					if (!customHandlers.exportImage && !customHandlers.pngsave) {
 						var str = uiStrings.notification.loadingImage;
-						exportWindow = window.open(
-							'data:text/html;charset=utf-8,' + encodeURIComponent('<title>' + str + '</title><h1>' + str + '</h1>'),
-							'svg-edit-exportWindow'
-						);
+						exportWindow = window.open('data:text/html;charset=utf-8,<title>' + str + '<\/title><h1>' + str + '<\/h1>');
 					}
 					var quality = parseInt($('#image-slider').val(), 10)/100;
-					svgCanvas.rasterExport(imgType, quality, (exportWindow && exportWindow.name));
+					if (window.canvg) {
+						svgCanvas.rasterExport(imgType, quality);
+					} else {
+						$.getScript('canvg/rgbcolor.js', function() {
+							$.getScript('canvg/canvg.js', function() {
+								svgCanvas.rasterExport(imgType, quality);
+							});
+						});
+					}
 				}, function () {
 					var sel = $(this);
 					if (sel.val() === 'JPEG' || sel.val() === 'WEBP') {
@@ -3717,7 +3675,7 @@ TODOS
 				if (supportsNonSS) {return;}
 				var wf_rules = $('#wireframe_rules');
 				if (!wf_rules.length) {
-					wf_rules = $('<style id="wireframe_rules"></style>').appendTo('head');
+					wf_rules = $('<style id="wireframe_rules"><\/style>').appendTo('head');
 				} else {
 					wf_rules.empty();
 				}
@@ -4025,7 +3983,7 @@ TODOS
 				var pos = elem.offset();
 				$('#color_picker')
 					.draggable({cancel: '.jGraduate_tabs, .jGraduate_colPick, .jGraduate_gradPick, .jPicker', containment: 'window'})
-					.css(curConfig.colorPickerCSS || {'left': pos.left - 140, 'bottom': 40})
+					.css(curConfig.colorPickerCSS || {'left': pos.left-140, 'bottom': 40})
 					.jGraduate(
 					{
 						paint: paint,
@@ -4350,7 +4308,7 @@ TODOS
 				$('#layerpanel').width('+=' + delta);
 				rulerX.css('right', parseInt(rulerX.css('right'), 10) + delta);
 				workarea.css('right', parseInt(workarea.css('right'), 10) + delta);
-				svgCanvas.runExtensions('workareaResized');
+				svgCanvas.runExtensions("workareaResized");
 			};
 
 			var resizeSidePanel = function(evt) {
@@ -5019,7 +4977,7 @@ TODOS
 				updateCanvas(true);
 //			});
 
-			//	var revnums = "svg-editor.js ($Rev$) ";
+			//	var revnums = "svg-editor.js ($Rev: 2732 $) ";
 			//	revnums += svgCanvas.getVersion();
 			//	$('#copyright')[0].setAttribute('title', revnums);
 
@@ -5145,19 +5103,9 @@ TODOS
 
 		editor.loadFromDataURI = function(str) {
 			editor.ready(function() {
-				var base64 = false;
-				var pre = str.match(/^data:image\/svg\+xml;base64,/);
-				if (pre) {
-					base64 = true;
-				}
-				else {
-					pre = str.match(/^data:image\/svg\+xml(?:;(?:utf8)?)?,/);
-				}
-				if (pre) {
-					pre = pre[0];
-				}
-				var src = str.slice(pre.length);
-				loadSvgString(base64 ? Utils.decode64(src) : decodeURIComponent(src));
+				var pre = 'data:image/svg+xml;base64,';
+				var src = str.substring(pre.length);
+				loadSvgString(Utils.decode64(src));
 			});
 		};
 
@@ -5173,7 +5121,7 @@ TODOS
 
 		return editor;
 	}(jQuery));
-
+	
 	// Run init once DOM is loaded
 	$(svgEditor.init);
 
