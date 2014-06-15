@@ -7552,6 +7552,7 @@ this.moveUpDownSelected = function(dir) {
 // Returns:
 // Batch command for the move
 this.moveSelectedElements = function(dx, dy, undoable) {
+
 	// if undoable is not sent, default to true
 	// if single values, scale them to the zoom
 	if (dx.constructor != Array) {
@@ -7579,7 +7580,8 @@ this.moveSelectedElements = function(dx, dy, undoable) {
 // if (i==0) {
 // selectedBBoxes[0].x += dx[0];
 // selectedBBoxes[0].y += dy[0];
-// }
+// }			
+				//alert(dx[i]+" "+dy[i]);
 				xform.setTranslate(dx[i], dy[i]);
 			} else {
 // if (i==0) {
@@ -7713,6 +7715,7 @@ this.alignSelectedElements = function(type, relative_to) {
 
 	var dx = new Array(len);
 	var dy = new Array(len);
+
 	for (i = 0; i < len; ++i) {
 		if (selectedElements[i] == null) {break;}
 		elem = selectedElements[i];
@@ -7720,8 +7723,78 @@ this.alignSelectedElements = function(type, relative_to) {
 		dx[i] = 0;
 		dy[i] = 0;
 		switch (type) {
-			case 'l': // left (horizontal)
-				dx[i] = minx - bbox.x;
+			case 'e': 
+			
+				var copy = [];
+				
+				for(i=0;i<len;i++){
+					copy.push(bboxes[i].x+bboxes[i].width/2);
+				}
+				
+				copy.sort(function (a, b) { return a-b; });
+				
+				var left_value=	copy[0];
+				var right_value=copy[len-1];
+				
+				for(i=0;i<len;i++) {
+						var actual = bboxes[i].x+bboxes[i].width/2;
+						var delta = (right_value-left_value)/(len-1);
+						var j;
+						for(k=0;k<len;k++) {
+						if(k==0){
+							}
+							if(Math.round(bboxes[i].x+bboxes[i].width/2)==Math.round(copy[k])) {
+								j=k;
+							}
+						}
+					var desired = left_value+j*delta;	//zur j bestimmung in copy schauen
+					var diff = desired-actual;
+					
+					dx[i]=diff;
+				}
+
+				for(i=0; i<len;i++) {
+				dy[i]=0;
+				}
+				break;
+			
+			case 'v': 
+			
+				var copy = [];
+				
+				for(i=0;i<len;i++){
+					copy.push(bboxes[i].y+bboxes[i].height/2);
+				}
+				
+				copy.sort(function (a, b) { return a-b; });
+				
+				var left_value=	copy[0];
+				var right_value=copy[len-1];
+				
+				for(i=0;i<len;i++) {
+						var actual = bboxes[i].y+bboxes[i].height/2;
+						var delta = (right_value-left_value)/(len-1);
+						var j;
+						for(k=0;k<len;k++) {
+						if(k==0){
+							}
+							if(Math.round(bboxes[i].y+bboxes[i].height/2)==Math.round(copy[k])) {
+								j=k;
+							}
+						}
+					var desired = left_value+j*delta;	//zur j bestimmung in copy schauen
+					var diff = desired-actual;
+					
+					dy[i]=diff;
+				}
+
+				for(i=0; i<len;i++) {
+				dx[i]=0;
+				}
+				break;
+			
+			case 'l':
+				dx[i]=minx - bbox.x;
 				break;
 			case 'c': // center (horizontal)
 				dx[i] = (minx+maxx)/2 - (bbox.x + bbox.width/2);
