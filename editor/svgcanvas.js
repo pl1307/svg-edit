@@ -7811,7 +7811,182 @@ this.alignSelectedElements = function(type, relative_to) {
 			case 'b': // bottom (vertical)
 				dy[i] = maxy - (bbox.y + bbox.height);
 				break;
-		}
+			case 'p':	//path alignment left
+	
+				/*if(selectedElements.length!=2) {alert("wrong number of arguments -> only 2 allowed"); break;} 
+				else if(!(selectedElements[0].animatedPathSegList && selectedElements[1].animatedPathSegList)) {
+					alert("Selected Elements have to be SVGPathElements");
+					break;
+				}*/
+				
+				var index_right = bboxes[0].x>bboxes[1].x ? 0 : 1;
+				var index_left = bboxes[0].x>bboxes[1].x ? 1 : 0;
+				
+				/*dx[index_right] = (minx - bboxes[index_right].x)+bboxes[index_right].width;		//first align right Element with the BBox of the left element -> is faster
+				dx[index_left] = 0;
+				dy[0]=0;
+				dy[1]=0;
+				this.moveSelectedElements(dx, dy);
+				dx[0]=0;
+				dx[1]=0;
+				dy[0]=0;
+				dy[1]=0;*/
+				
+				
+				//save all points in array
+				var point_array = [];
+				var len = selectedElements[index_right].animatedPathSegList.length;
+				for(i=0; i<len; i++) 
+				{
+				point_array.push(selectedElements[index_right].animatedPathSegList[i]);
+				}
+				//find minimum and maximum respective to y and the corresponding index
+				var tmp_min = selectedElements[index_right].animatedPathSegList[0].y;
+				var tmp_max = selectedElements[index_right].animatedPathSegList[0].y;
+				var tmp_max_i = 0;
+				var tmp_min_i = 0;
+				for(i=0; i<len; i++) {
+						if(selectedElements[index_right].animatedPathSegList[i].y<tmp_min) {
+							tmp_min=selectedElements[index_right].animatedPathSegList[i].y;
+							tmp_min_i=i;
+						} else if(selectedElements[index_right].animatedPathSegList[i].y>tmp_max) {
+							tmp_max=selectedElements[index_right].animatedPathSegList[i].y;
+							tmp_max_i=i;
+						}
+				}
+				var p_array = [];		//save only the points that are facing the left object
+				
+				if(selectedElements[index_right].animatedPathSegList[tmp_min_i].x>selectedElements[index_right].animatedPathSegList[(tmp_min_i+1)%len].x) {
+					var z = tmp_min_i;
+					tmp_min_i=tmp_max_i;
+					tmp_max_i=z;
+				}	//order of points are clockwise or anti-clockwise -> check what is the case and define the minimum and maximum
+				
+				for(i=tmp_max_i;i!=tmp_min_i;i=(i+1)%len) {
+					if(selectedElements[index_right].animatedPathSegList[i].x) {
+					p_array.push(selectedElements[index_right].animatedPathSegList[i]);
+					}
+				}
+				p_array.push(selectedElements[index_right].animatedPathSegList[tmp_min_i]);		//only the points which are facing the other element
+
+
+				var gr_array = [];
+				for(i=0; i<p_array.length;i++) {
+					var m = (p_array[i].y-p_array[(i+1)%p_array.length].y)/(p_array[i].x-p_array[(i+1)%p_array.length].x); //calc slope of line
+					var n = p_array[i].y-m*p_array[i].x;	//calc axis intercept
+					gr_array.push({x:p_array[i].x, y0:p_array[i].y, y1:p_array[(i+1)%p_array.length].y, m:m, n: n});	//save all values as "line"-object in array to calc intercept points with the other object
+				}
+			
+				//same for the other object
+				var index_left = bboxes[0].x>bboxes[1].x ? 1 : 0;
+				//save all points
+				var point_array = [];
+				var len = selectedElements[index_left].animatedPathSegList.length;
+				for(i=0; i<len; i++) 
+				{
+				point_array.push(selectedElements[index_left].animatedPathSegList[i]);
+				}
+				//find minimum and maximum respective to y
+				var tmp_min = selectedElements[index_left].animatedPathSegList[0].y;
+				var tmp_max = selectedElements[index_left].animatedPathSegList[0].y;
+				var tmp_max_i = 0;
+				var tmp_min_i = 0;
+				for(i=0; i<len; i++) {
+						if(selectedElements[index_left].animatedPathSegList[i].y<tmp_min) {
+							tmp_min=selectedElements[index_left].animatedPathSegList[i].y;
+							tmp_min_i=i;
+						} else if(selectedElements[index_left].animatedPathSegList[i].y>tmp_max) {
+							tmp_max=selectedElements[index_left].animatedPathSegList[i].y;
+							tmp_max_i=i;
+						}
+				}
+				var p_array = [];		//save points which are facing to the other object
+				
+				if(selectedElements[index_left].animatedPathSegList[tmp_min_i].x>selectedElements[index_left].animatedPathSegList[(tmp_min_i+1)%len].x) {
+					var z = tmp_min_i;
+					tmp_min_i=tmp_max_i;
+					tmp_max_i=z;
+				}
+				
+				
+				for(i=tmp_min_i;i!=tmp_max_i;i=(i+1)%len) { //iterate from minimum to maximum
+					if(selectedElements[index_left].animatedPathSegList[i].x) {
+					p_array.push(selectedElements[index_left].animatedPathSegList[i]);
+					}
+				}
+				p_array.push(selectedElements[index_left].animatedPathSegList[tmp_max_i]);
+
+
+				var gl_array = [];
+				for(i=0; i<p_array.length;i++) {
+					var m = (p_array[i].y-p_array[(i+1)%p_array.length].y)/(p_array[i].x-p_array[(i+1)%p_array.length].x);
+					var n = p_array[i].y-m*p_array[i].x;
+					gl_array.push({x:p_array[i].x, x1:p_array[(i+1)%p_array.length].x, y0:p_array[i].y, y1:p_array[(i+1)%p_array.length].y, m:m, n: n});
+				}
+				
+				//--------------------------------------------------------------------------------------------------
+				//now the intercept points calculation
+				
+				var max_s_x=0;
+				var max_s_y=0;
+				var count =0;
+				var which_g = 0;
+				var infinite = false;
+				while(max_s_x==0) {
+					for(i=0; i<gr_array.length;i++) {
+						for(j=0; j<gl_array.length;j++) {
+							var max_y_left = Math.max(gl_array[j].y0,gl_array[j].y1);
+							var min_y_left = Math.min(gl_array[j].y0,gl_array[j].y1);
+							var max_y_right = Math.max(gr_array[i].y0,gr_array[i].y1);
+							var min_y_right = Math.min(gr_array[i].y0,gr_array[i].y1);
+						
+							var max_ges = Math.min(max_y_left,max_y_right);	//interception intervall
+							var min_ges = Math.max(min_y_left,min_y_right);
+													
+							var s_x=(gr_array[i].n-gl_array[j].n)/(gl_array[j].m-gr_array[i].m); //y=m*x+n => x=(n1-n2)/(m2-m1)
+							var s_y=gr_array[i].m*s_x+gr_array[i].n;
+							//many constraints: greater than actual max_value => to find the intercept points with largest x-value
+							//intercept point has to be lesser than the right object bbox-begin
+							//intercept point has to be in a certain y-intervall -> maximum of minimum of the y-value from both lines and minimum of maximum of the y-value from both lines
+							//and intercept point has to be lesser than the greatest x-value on the line
+							if(s_x>max_s_x && s_x<=bboxes[index_right].x&&min_ges<=s_y&&s_y<=max_ges&&s_x<=Math.max(gl_array[j].x,gl_array[j].x1)){
+								max_s_x=s_x;
+								max_s_y=s_y;
+								which_g=i;
+							}
+						}
+					}
+					for(k=0; k<gr_array.length;k++) {	//in dependency of the slope ++ or -- axis interception to parallel translate the object in the direction of the left object
+						if(gr_array[k].m<0) {
+						gr_array[k].n=gr_array[k].n-1;
+						}else{
+						gr_array[k].n=gr_array[k].n+1;
+						}
+					}
+					count++;	//count of the n-- or n++ to calc the translation of the right object
+					if(count>10000) {
+					infinite=true;		//to avoid infinite loops
+					break;
+					}
+				}
+				if(gr_array[which_g].m<0) {
+				gr_array[which_g].n=gr_array[which_g].n+count;
+				}else{
+				gr_array[which_g].n=gr_array[which_g].n-count;
+				}
+
+				var my_x=(max_s_y-gr_array[which_g].n)/gr_array[which_g].m;
+
+				if(infinite){dx[index_right]=0;}
+				else{
+				dx[index_right]=-(my_x-max_s_x);
+				}
+				dx[index_left]=0;
+				dy[0]=0;
+				dy[1]=0;
+				break;
+				
+		}		
 	}
 	this.moveSelectedElements(dx, dy);
 };

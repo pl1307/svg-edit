@@ -637,7 +637,7 @@ TO-DOS
 					'align_middle': 'align-middle.png',
 					'align_eqh': 'align-bottom.png',
 					'align_veq': 'align-bottom.png',
-					'align_bottom': 'align-bottom.png',
+					'align_bottom': 'blub',
 
 					'go_up': 'go-up.png',
 					'go_down': 'go-down.png',
@@ -700,6 +700,7 @@ TO-DOS
 					'#tool_alignbottom, #tool_posbottom': 'align_bottom',
 					'#tool_aligneqh, #tool_poseqh': 'align_eqh',
 					'#tool_alignveq, #tool_posveq': 'align_veq',
+					'#tool_alignpathl, #tool_alignpathl': 'align_pathl',
 					'#cur_position': 'align',
 
 					'#linecap_butt,#cur_linecap': 'linecap_butt',
