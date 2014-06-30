@@ -8053,6 +8053,9 @@ this.alignSelectedElements = function(type, relative_to) {
 				//--------------------------------------------------------------------------------------------------
 				//now the intercept points calculation
 				
+				for(i=0; i<gb_array.length;i++) {
+				//alert(gb_array[i].y0 + " " + gb_array[i].y1);
+				}
 				
 				var max_s_x=0;
 				var max_s_y=0;
@@ -8072,9 +8075,7 @@ this.alignSelectedElements = function(type, relative_to) {
 													
 							var s_x=(gt_array[i].n-gb_array[j].n)/(gb_array[j].m-gt_array[i].m); //y=m*x+n => x=(n1-n2)/(m2-m1)
 							var s_y=gt_array[i].m*s_x+gt_array[i].n;
-							
-							//alert(max_ges + " "+ min_ges);	<--------------------
-							//many constraints: greater than actual max_value => to find the intercept points with largest x-value
+														//many constraints: greater than actual max_value => to find the intercept points with largest x-value
 							//intercept point has to be lesser than the right object bbox-begin
 							//intercept point has to be in a certain y-intervall -> maximum of minimum of the y-value from both lines and minimum of maximum of the y-value from both lines
 							//and intercept point has to be lesser than the greatest x-value on the line
@@ -8083,7 +8084,7 @@ this.alignSelectedElements = function(type, relative_to) {
 								max_s_x=s_x;
 								max_s_y=s_y;
 								which_g=i;
-								//alert(j);
+								//alert(j+ " "+ i);
 							}
 						}
 					}
@@ -8286,13 +8287,13 @@ this.calcLinearEquation_vertical = function(bboxes) {
 				}
 				
 				
-				//find minimum and maximum respective to y
+				//find minimum and maximum respective to x
 				var tmp_min = selectedElements[index_bottom].animatedPathSegList[0].x;
 				var tmp_max = selectedElements[index_bottom].animatedPathSegList[0].x;
 				var tmp_max_i = 0;
 				var tmp_min_i = 0;
 				for(i=0; i<len; i++) {
-						if(selectedElements[index_bottom].animatedPathSegList[i].y<tmp_min) {
+						if(selectedElements[index_bottom].animatedPathSegList[i].x<tmp_min) {
 							tmp_min=selectedElements[index_bottom].animatedPathSegList[i].x;
 							tmp_min_i=i;
 						} else if(selectedElements[index_bottom].animatedPathSegList[i].x>tmp_max) {
@@ -8300,18 +8301,27 @@ this.calcLinearEquation_vertical = function(bboxes) {
 							tmp_max_i=i;
 						}
 				}
+				
 								
 				var p_array = [];		//save points which are facing to the other object
 				
-				if(selectedElements[index_bottom].animatedPathSegList[tmp_min_i].y<selectedElements[index_bottom].animatedPathSegList[(tmp_min_i+1)%len].y) {
-					var z = tmp_min_i;
+				//alert(tmp_max +" "+ tmp_min);
+				
+				var j=-1;
+				
+				if(selectedElements[index_bottom].animatedPathSegList[tmp_min_i].y>selectedElements[index_bottom].animatedPathSegList[(tmp_min_i+1)%len].y) {
+					j=1;
+					/*var z = tmp_min_i;
 					tmp_min_i=tmp_max_i;
-					tmp_max_i=z;
+					tmp_max_i=z;*/
+					
 				}
 				
 				//alert(selectedElements[index_left].animatedPathSegList[tmp_min_i].x);
-				for(i=tmp_min_i;i!=tmp_max_i;i=(i+1)%len) { //iterate from minimum to maximum
-					//alert(selectedElements[index_left].animatedPathSegList[i].x + " " +i);
+				//it is simply (i+j)%len, because of js modulo bug
+				for(i=tmp_min_i;i!=tmp_max_i;i=(((i+j)%len)+len)%len) { //iterate from minimum to maximum
+					//alert(i);
+					//alert(selectedElements[index_bottom].animatedPathSegList[i].y + " " +i);
 					if(selectedElements[index_bottom].animatedPathSegList[i].y) {
 					p_array.push(selectedElements[index_bottom].animatedPathSegList[i]);
 					}
