@@ -637,7 +637,7 @@ TO-DOS
 					'align_middle': 'align-middle.png',
 					'align_eqh': 'align-bottom.png',
 					'align_veq': 'align-bottom.png',
-					'align_bottom': 'blub',
+					'align_bottom': 'align-bottom.png',
 
 					'go_up': 'go-up.png',
 					'go_down': 'go-down.png',
@@ -701,6 +701,10 @@ TO-DOS
 					'#tool_aligneqh, #tool_poseqh': 'align_eqh',
 					'#tool_alignveq, #tool_posveq': 'align_veq',
 					'#tool_alignpathl, #tool_alignpathl': 'align_pathl',
+					'#tool_alignapathr, #tool_alignapathr': 'align_pathr',
+					'#tool_aligndpatht, #tool_aligndpatht': 'align_patht',
+					'#tool_alignfpathb, #tool_alignfpathb': 'align_pathb',
+
 					'#cur_position': 'align',
 
 					'#linecap_butt,#cur_linecap': 'linecap_butt',
@@ -922,6 +926,7 @@ TO-DOS
 			var textBeingEntered = false;
 			var selectedElement = null;
 			var multiselected = false;
+			var two_paths_selected= false;
 			var editingsource = false;
 			var docprops = false;
 			var preferences = false;
@@ -1566,7 +1571,7 @@ TO-DOS
 
 				var is_node = currentMode == 'pathedit'; //elem ? (elem.id && elem.id.indexOf('pathpointgrip') == 0) : false;
 				var menu_items = $('#cmenu_canvas li');
-				$('#selected_panel, #multiselected_panel, #g_panel, #rect_panel, #circle_panel,'+
+				$('#selected_panel, #multiselected_panel, #two_paths_panel, #g_panel, #rect_panel, #circle_panel,'+
 					'#ellipse_panel, #line_panel, #text_panel, #image_panel, #container_panel,'+
 					' #use_panel, #a_panel').hide();
 				if (elem != null) {
@@ -1750,7 +1755,11 @@ TO-DOS
 					menu_items
 						.enableContextMenuItems('#group')
 						.disableContextMenuItems('#ungroup');
-				} else {
+					if(two_paths_selected) {
+						$('#two_paths_panel').show();
+					}
+				}
+				 else {
 					menu_items.disableContextMenuItems('#delete,#cut,#copy,#group,#ungroup,#move_front,#move_up,#move_down,#move_back');
 				}
 
@@ -1800,6 +1809,8 @@ TO-DOS
 				// if elems[1] is present, then we have more than one element
 				selectedElement = (elems.length === 1 || elems[1] == null ? elems[0] : null);
 				multiselected = (elems.length >= 2 && elems[1] != null);
+				two_paths_selected = elems.length == 2 && elems[0]=="[object SVGPathElement]";
+				//[object SVGPathElement]
 				if (selectedElement != null) {
 					// unless we're already in always set the mode of the editor to select because
 					// upon creation of a text element the editor is switched into
