@@ -7812,14 +7812,17 @@ this.alignSelectedElements = function(type, relative_to) {
 				dy[i] = maxy - (bbox.y + bbox.height);
 				break;
 			case 'p':	//path alignment left
-	
+				
 				
 				var index_right = bboxes[0].x>bboxes[1].x ? 0 : 1;
 				var index_left = bboxes[0].x>bboxes[1].x ? 1 : 0;
-			
+								
+							
 				var result = this.calcLinearEquation_horizontal(bboxes);	//get 2 arrays of linear equations for each line
 				var gl_array=result[0];
 				var gr_array=result[1];
+				
+				//for(i=0; i<gr_array.length;i++) {alert(gr_array[i].y0 + " "+ gr_array[i].y1);}
 				
 				//--------------------------------------------------------------------------------------------------
 				//now the intercept points calculation
@@ -7839,11 +7842,12 @@ this.alignSelectedElements = function(type, relative_to) {
 						
 							var max_ges = Math.min(max_y_left,max_y_right);	//interception intervall
 							var min_ges = Math.max(min_y_left,min_y_right);
-													
+							//if(j==0 && i==1){alert(gl_array[j].m+ " "+gr_array[i].m);}
+							//if(j==0 && i==1) {alert(gl_array[j].m-gr_array[i].m);}
 							var s_x=(gr_array[i].n-gl_array[j].n)/(gl_array[j].m-gr_array[i].m); //y=m*x+n => x=(n1-n2)/(m2-m1)
 							var s_y=gr_array[i].m*s_x+gr_array[i].n;
-							//if(j==0 && i==0) {alert(s_x +" "+ s_y + " " + min_ges +" "+max_ges)}; // <------------
 							//if(j==0 && i==1) {alert(s_x +" "+ s_y + " " + min_ges +" "+max_ges)}; // <------------
+							//if(j==0 && i==2) {alert(s_x +" "+ s_y + " " + min_ges +" "+max_ges)}; // <------------
 
 							//many constraints: greater than actual max_value => to find the intercept points with largest x-value
 							//intercept point has to be lesser than the right object bbox-begin
@@ -7878,7 +7882,7 @@ this.alignSelectedElements = function(type, relative_to) {
 				gr_array[which_g].x=gr_array[which_g].x+count;
 				gr_array[which_g].x1=gr_array[which_g].x1+count;
 				gr_array[which_g].n=gr_array[which_g].y0-(gr_array[which_g].m*gr_array[which_g].x);
-
+								
 				var my_x=(max_s_y-gr_array[which_g].n)/gr_array[which_g].m;
 
 				if(infinite){dx[index_right]=0;}
@@ -7898,6 +7902,8 @@ this.alignSelectedElements = function(type, relative_to) {
 				var result = this.calcLinearEquation_horizontal(bboxes);
 				var gl_array=result[0];
 				var gr_array=result[1];
+				
+				//for(i=0; i<gr_array.length;i++) {alert(gr_array[i].y0 + " "+ gr_array[i].y1);}
 				
 				//--------------------------------------------------------------------------------------------------
 				//now the intercept points calculation
@@ -7921,8 +7927,8 @@ this.alignSelectedElements = function(type, relative_to) {
 													
 							var s_x=(gl_array[j].n-gr_array[i].n)/(gr_array[i].m-gl_array[j].m); //y=m*x+n => x=(n1-n2)/(m2-m1)
 							var s_y=gl_array[j].m*s_x+gl_array[j].n;
-							//if(j==0 && i==0) {alert(s_x +" "+ s_y + " " + min_ges +" "+max_ges)}; // <------------
-							//if(j==0 && i==1) {alert(s_x +" "+ s_y + " " + min_ges +" "+max_ges)}; // <------------
+							//if(j==0 && i==1) {alert(s_x +" "+ s_y + " " + min_ges +" "+max_ges + " " + gr_array[i].m)}; // <------------
+							//if(j==0 && i==2) {alert(s_x +" "+ s_y + " " + min_ges +" "+max_ges)}; // <------------
 
 							//many constraints: greater than actual max_value => to find the intercept points with largest x-value
 							//intercept point has to be lesser than the right object bbox-begin
@@ -7934,7 +7940,7 @@ this.alignSelectedElements = function(type, relative_to) {
 								max_s_x=s_x;
 								max_s_y=s_y;
 								which_g=j;
-								//alert(s_x+" "+s_y);
+								//alert(i + " " +j);
 							}
 						}
 					}
@@ -8122,50 +8128,71 @@ this.alignSelectedElements = function(type, relative_to) {
 
 this.calcLinearEquation_horizontal = function(bboxes) {
 
+				//for(i=0; i<selectedElements[0].animatedPoints.length;i++) {alert(selectedElements[0].animatedPoints[i].x);}
+				
+
 				var index_right = bboxes[0].x>bboxes[1].x ? 0 : 1;
 				var index_left = bboxes[0].x>bboxes[1].x ? 1 : 0;
 				
+				var list_right = [];
+				var list_left = [];
+				
+				if(selectedElements[index_right]=="[object SVGPolygonElement]") {
+					list_right=selectedElements[index_right].animatedPoints;
+				}else{
+					list_right=selectedElements[index_right].animatedPathSegList;
+				}
+				
+				if(selectedElements[index_left]=="[object SVGPolygonElement]") {
+					list_left=selectedElements[index_left].animatedPoints;
+				}else{
+					list_left=selectedElements[index_left].animatedPathSegList;
+				}
 				
 				//save all points in array
 				var point_array = [];
-				var len = selectedElements[index_right].animatedPathSegList.length;
+				var len = list_right.length;
 				for(i=0; i<len; i++) 
 				{
-				point_array.push(selectedElements[index_right].animatedPathSegList[i]);
+				point_array.push(list_right[i]);
 				}
 				//find minimum and maximum respective to y and the corresponding index
-				var tmp_min = selectedElements[index_right].animatedPathSegList[0].y;
-				var tmp_max = selectedElements[index_right].animatedPathSegList[0].y;
+				var tmp_min = list_right[0].y;
+				var tmp_max = list_right[0].y;
 				var tmp_max_i = 0;
 				var tmp_min_i = 0;
 				for(i=0; i<len; i++) {
-						if(selectedElements[index_right].animatedPathSegList[i].y<tmp_min) {
-							tmp_min=selectedElements[index_right].animatedPathSegList[i].y;
+						if(list_right[i].y<tmp_min) {
+							tmp_min=list_right[i].y;
 							tmp_min_i=i;
-						} else if(selectedElements[index_right].animatedPathSegList[i].y>tmp_max) {
-							tmp_max=selectedElements[index_right].animatedPathSegList[i].y;
+						} else if(list_right[i].y>tmp_max) {
+							tmp_max=list_right[i].y;
 							tmp_max_i=i;
 						}
 				}
 				var p_array = [];		//save only the points that are facing the left object
 				
-				if(selectedElements[index_right].animatedPathSegList[tmp_min_i].x>selectedElements[index_right].animatedPathSegList[(tmp_min_i+1)%len].x) {
+				if(list_right[tmp_min_i].x>list_right[(tmp_min_i+1)%len].x) {
 					var z = tmp_min_i;
 					tmp_min_i=tmp_max_i;
 					tmp_max_i=z;
 				}	//order of points are clockwise or anti-clockwise -> check what is the case and define the minimum and maximum
 				
 				for(i=tmp_max_i;i!=tmp_min_i;i=(i+1)%len) {
-					if(selectedElements[index_right].animatedPathSegList[i].x) {
-					p_array.push(selectedElements[index_right].animatedPathSegList[i]);
+					if(list_right[i].x) {
+					p_array.push(list_right[i]);
 					}
 				}
-				p_array.push(selectedElements[index_right].animatedPathSegList[tmp_min_i]);		//only the points which are facing the other element
+				p_array.push(list_right[tmp_min_i]);		//only the points which are facing the other element
 
 
 				var gr_array = [];
 				for(i=0; i<p_array.length;i++) {
+					if((p_array[i].x-p_array[(i+1)%p_array.length].x)==0) {		//do avoid calc /0
+					var m = (p_array[i].y-p_array[(i+1)%p_array.length].y)/0.0000000000001;
+					}else{
 					var m = (p_array[i].y-p_array[(i+1)%p_array.length].y)/(p_array[i].x-p_array[(i+1)%p_array.length].x); //calc slope of line
+					}
 					var n = p_array[i].y-m*p_array[i].x;	//calc axis intercept
 					gr_array.push({x:p_array[i].x,x1:p_array[(i+1)%p_array.length].x, y0:p_array[i].y, y1:p_array[(i+1)%p_array.length].y, m:m, n: n});	//save all values as "line"-object in array to calc intercept points with the other object
 				}
@@ -8174,44 +8201,44 @@ this.calcLinearEquation_horizontal = function(bboxes) {
 				var index_left = bboxes[0].x>bboxes[1].x ? 1 : 0;
 				//save all points
 				var point_array = [];
-				var len = selectedElements[index_left].animatedPathSegList.length;
+				var len = list_left.length;
 				for(i=0; i<len; i++) 
 				{
-				point_array.push(selectedElements[index_left].animatedPathSegList[i]);
+				point_array.push(list_left[i]);
 				}
 				
 				
 				//find minimum and maximum respective to y
-				var tmp_min = selectedElements[index_left].animatedPathSegList[0].y;
-				var tmp_max = selectedElements[index_left].animatedPathSegList[0].y;
+				var tmp_min = list_left[0].y;
+				var tmp_max = list_left[0].y;
 				var tmp_max_i = 0;
 				var tmp_min_i = 0;
 				for(i=0; i<len; i++) {
-						if(selectedElements[index_left].animatedPathSegList[i].y<tmp_min) {
-							tmp_min=selectedElements[index_left].animatedPathSegList[i].y;
+						if(list_left[i].y<tmp_min) {
+							tmp_min=list_left[i].y;
 							tmp_min_i=i;
-						} else if(selectedElements[index_left].animatedPathSegList[i].y>tmp_max) {
-							tmp_max=selectedElements[index_left].animatedPathSegList[i].y;
+						} else if(list_left[i].y>tmp_max) {
+							tmp_max=list_left[i].y;
 							tmp_max_i=i;
 						}
 				}
 								
 				var p_array = [];		//save points which are facing to the other object
 				
-				if(selectedElements[index_left].animatedPathSegList[tmp_min_i].x>selectedElements[index_left].animatedPathSegList[(tmp_min_i+1)%len].x) {
+				if(list_left[tmp_min_i].x>list_left[(tmp_min_i+1)%len].x) {
 					var z = tmp_min_i;
 					tmp_min_i=tmp_max_i;
 					tmp_max_i=z;
 				}
 				
-				//alert(selectedElements[index_left].animatedPathSegList[tmp_min_i].x);
+				//alert(list_left[tmp_min_i].x);
 				for(i=tmp_min_i;i!=tmp_max_i;i=(i+1)%len) { //iterate from minimum to maximum
-					//alert(selectedElements[index_left].animatedPathSegList[i].x + " " +i);
-					if(selectedElements[index_left].animatedPathSegList[i].x) {
-					p_array.push(selectedElements[index_left].animatedPathSegList[i]);
+					//alert(list_left[i].x + " " +i);
+					if(list_left[i].x) {
+					p_array.push(list_left[i]);
 					}
 				}
-				p_array.push(selectedElements[index_left].animatedPathSegList[tmp_max_i]);
+				p_array.push(list_left[tmp_max_i]);
 
 
 				var gl_array = [];
@@ -8221,52 +8248,80 @@ this.calcLinearEquation_horizontal = function(bboxes) {
 					gl_array.push({x:p_array[i].x, x1:p_array[(i+1)%p_array.length].x, y0:p_array[i].y, y1:p_array[(i+1)%p_array.length].y, m:m, n: n});
 				}
 				
+				for(i=0;i<gl_array.length;i++) {
+					if(gl_array[i].x==gl_array[i].x1 && gl_array[i].y0==gl_array[i].y1) {
+						gl_array.splice(i,1);
+					}
+				}
+				
+				for(i=0;i<gr_array.length;i++) {
+					if(gr_array[i].x==gr_array[i].x1 && gr_array[i].y0==gr_array[i].y1) {
+						gr_array.splice(i,1);
+					}
+				}
+				
 				var result_array=[];
 				result_array.push(gl_array);
 				result_array.push(gr_array);
 				return result_array;
 }
 
+
 this.calcLinearEquation_vertical = function(bboxes) {
 //save all points in array
 				
 				var index_top = bboxes[0].y>bboxes[1].y ? 1 : 0;
 				var index_bottom = bboxes[0].y>bboxes[1].y ? 0 : 1;
+				
+				var list_top = [];
+				var list_bottom = [];
+				
+				if(selectedElements[index_bottom]=="[object SVGPolygonElement]") {
+					list_bottom=selectedElements[index_bottom].animatedPoints;
+				}else{
+					list_bottom=selectedElements[index_bottom].animatedPathSegList;
+				}
+				
+				if(selectedElements[index_top]=="[object SVGPolygonElement]") {
+					list_top=selectedElements[index_top].animatedPoints;
+				}else{
+					list_top=selectedElements[index_top].animatedPathSegList;
+				}
 
 				var point_array = [];
-				var len = selectedElements[index_top].animatedPathSegList.length;
+				var len = list_top.length;
 				for(i=0; i<len; i++) 
 				{
-				point_array.push(selectedElements[index_top].animatedPathSegList[i]);
+				point_array.push(list_top[i]);
 				}
 				//find minimum and maximum respective to y and the corresponding index
-				var tmp_min = selectedElements[index_top].animatedPathSegList[0].x;
-				var tmp_max = selectedElements[index_top].animatedPathSegList[0].x;
+				var tmp_min = list_top[0].x;
+				var tmp_max = list_top[0].x;
 				var tmp_max_i = 0;
 				var tmp_min_i = 0;
 				for(i=0; i<len; i++) {
-						if(selectedElements[index_top].animatedPathSegList[i].x<tmp_min) {
-							tmp_min=selectedElements[index_top].animatedPathSegList[i].x;
+						if(list_top[i].x<tmp_min) {
+							tmp_min=list_top[i].x;
 							tmp_min_i=i;
-						} else if(selectedElements[index_top].animatedPathSegList[i].x>tmp_max) {
-							tmp_max=selectedElements[index_top].animatedPathSegList[i].x;
+						} else if(list_top[i].x>tmp_max) {
+							tmp_max=list_top[i].x;
 							tmp_max_i=i;
 						}
 				}
 				var p_array = [];		//save only the points that are facing the left object
 				
-				if(selectedElements[index_top].animatedPathSegList[tmp_min_i].y<selectedElements[index_top].animatedPathSegList[(tmp_min_i+1)%len].y) {
+				if(list_top[tmp_min_i].y<list_top[(tmp_min_i+1)%len].y) {
 					var z = tmp_min_i;
 					tmp_min_i=tmp_max_i;
 					tmp_max_i=z;
 				}	//order of points are clockwise or anti-clockwise -> check what is the case and define the minimum and maximum
 				
 				for(i=tmp_max_i;i!=tmp_min_i;i=(i+1)%len) {
-					if(selectedElements[index_top].animatedPathSegList[i].y) {
-					p_array.push(selectedElements[index_top].animatedPathSegList[i]);
+					if(list_top[i].y) {
+					p_array.push(list_top[i]);
 					}
 				}
-				p_array.push(selectedElements[index_top].animatedPathSegList[tmp_min_i]);		//only the points which are facing the other element
+				p_array.push(list_top[tmp_min_i]);		//only the points which are facing the other element
 
 
 				var gt_array = [];
@@ -8280,24 +8335,24 @@ this.calcLinearEquation_vertical = function(bboxes) {
 				//same for the other object
 				//save all points
 				var point_array = [];
-				var len = selectedElements[index_bottom].animatedPathSegList.length;
+				var len = list_bottom.length;
 				for(i=0; i<len; i++) 
 				{
-				point_array.push(selectedElements[index_bottom].animatedPathSegList[i]);
+				point_array.push(list_bottom[i]);
 				}
 				
 				
 				//find minimum and maximum respective to x
-				var tmp_min = selectedElements[index_bottom].animatedPathSegList[0].x;
-				var tmp_max = selectedElements[index_bottom].animatedPathSegList[0].x;
+				var tmp_min = list_bottom[0].x;
+				var tmp_max = list_bottom[0].x;
 				var tmp_max_i = 0;
 				var tmp_min_i = 0;
 				for(i=0; i<len; i++) {
-						if(selectedElements[index_bottom].animatedPathSegList[i].x<tmp_min) {
-							tmp_min=selectedElements[index_bottom].animatedPathSegList[i].x;
+						if(list_bottom[i].x<tmp_min) {
+							tmp_min=list_bottom[i].x;
 							tmp_min_i=i;
-						} else if(selectedElements[index_bottom].animatedPathSegList[i].x>tmp_max) {
-							tmp_max=selectedElements[index_bottom].animatedPathSegList[i].x;
+						} else if(list_bottom[i].x>tmp_max) {
+							tmp_max=list_bottom[i].x;
 							tmp_max_i=i;
 						}
 				}
@@ -8309,7 +8364,7 @@ this.calcLinearEquation_vertical = function(bboxes) {
 				
 				var j=-1;
 				
-				if(selectedElements[index_bottom].animatedPathSegList[tmp_min_i].y>selectedElements[index_bottom].animatedPathSegList[(tmp_min_i+1)%len].y) {
+				if(list_bottom[tmp_min_i].y>list_bottom[(tmp_min_i+1)%len].y) {
 					j=1;
 					/*var z = tmp_min_i;
 					tmp_min_i=tmp_max_i;
@@ -8317,26 +8372,43 @@ this.calcLinearEquation_vertical = function(bboxes) {
 					
 				}
 				
-				//alert(selectedElements[index_left].animatedPathSegList[tmp_min_i].x);
+				//alert(list_left[tmp_min_i].x);
 				//it is simply (i+j)%len, because of js modulo bug
 				for(i=tmp_min_i;i!=tmp_max_i;i=(((i+j)%len)+len)%len) { //iterate from minimum to maximum
 					//alert(i);
-					//alert(selectedElements[index_bottom].animatedPathSegList[i].y + " " +i);
-					if(selectedElements[index_bottom].animatedPathSegList[i].y) {
-					p_array.push(selectedElements[index_bottom].animatedPathSegList[i]);
+					//alert(list_bottom[i].y + " " +i);
+					if(list_bottom[i].y) {
+					p_array.push(list_bottom[i]);
 					}
 				}
-				p_array.push(selectedElements[index_bottom].animatedPathSegList[tmp_max_i]);
+				p_array.push(list_bottom[tmp_max_i]);
 
 
 				var gb_array = [];
 				for(i=0; i<p_array.length;i++) {
-					var m = (p_array[i].y-p_array[(i+1)%p_array.length].y)/(p_array[i].x-p_array[(i+1)%p_array.length].x);
+					if((p_array[i].x-p_array[(i+1)%p_array.length].x)==0) {		//do avoid calc /0
+						var m = (p_array[i].y-p_array[(i+1)%p_array.length].y)/0.0000000000001;
+					}else{
+						var m = (p_array[i].y-p_array[(i+1)%p_array.length].y)/(p_array[i].x-p_array[(i+1)%p_array.length].x);
+					}
 					var n = p_array[i].y-m*p_array[i].x;
 					gb_array.push({x:p_array[i].x, x1:p_array[(i+1)%p_array.length].x, y0:p_array[i].y, y1:p_array[(i+1)%p_array.length].y, m:m, n: n});
 				}
 				
 				var result_array=[];
+				
+				for(i=0;i<gt_array.length;i++) {
+					if(gt_array[i].x==gt_array[i].x1 && gt_array[i].y0==gt_array[i].y1) {
+						gt_array.splice(i,1);
+					}
+				}
+				
+				for(i=0;i<gb_array.length;i++) {
+					if(gb_array[i].x==gb_array[i].x1 && gb_array[i].y0==gb_array[i].y1) {
+						gb_array.splice(i,1);
+					}
+				}
+				
 				result_array.push(gt_array);
 				result_array.push(gb_array);
 				return result_array;

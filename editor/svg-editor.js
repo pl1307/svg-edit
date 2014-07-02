@@ -1809,7 +1809,9 @@ TO-DOS
 				// if elems[1] is present, then we have more than one element
 				selectedElement = (elems.length === 1 || elems[1] == null ? elems[0] : null);
 				multiselected = (elems.length >= 2 && elems[1] != null);
-				two_paths_selected = elems.length == 2 && elems[0]=="[object SVGPathElement]";
+				//[object SVGPolygonElement]
+				two_paths_selected = (elems[0]=="[object SVGPathElement]" || elems[0]=="[object SVGPolygonElement]") && (elems[1] == "[object SVGPathElement]" || elems[1] == "[object SVGPolygonElement]") && !elems[2];
+				//two_paths_selected = ((elems.length == 2) && elems[0]=="[object SVGPathElement]" && elems[1] == "[object SVGPathElement]");
 				//[object SVGPathElement]
 				if (selectedElement != null) {
 					// unless we're already in always set the mode of the editor to select because
