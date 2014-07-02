@@ -26,6 +26,8 @@
 // 12) coords.js
 // 13) recalculate.js
 
+//test mail notification
+
 (function () {
 
 if (!window.console) {
