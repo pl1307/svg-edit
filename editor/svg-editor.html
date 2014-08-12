@@ -210,6 +210,10 @@ by creating the following file and adding by calls to svgEditor.setConfig -->
 					<div class="push_button" id="tool_reorient" title="Reorient path"></div>
 					<div class="push_button" id="tool_make_link"
 						title="Make (hyper)link"></div>
+					<div class="push_button" id="tool_dashed_line"
+						title="dashed line"><img src="images/rsz_dashed.png"/></div>
+					<div class="push_button" id="tool_create_angle"
+						title="add angles"><img src="images/rsz_angle.png"/></div>
 					<div class="tool_sep"></div>
 					<label id="idLabel" title="Identify the element"> <span>id:</span>
 						<input id="elem_id" class="attr_changer" data-attr="id" size="10"
@@ -249,6 +253,7 @@ by creating the following file and adding by calls to svgEditor.setConfig -->
 					</label>
 				</div>
 			</div>
+			
 
 			<!-- Buttons when multiple elements are selected -->
 			<div id="multiselected_panel">
@@ -286,6 +291,7 @@ by creating the following file and adding by calls to svgEditor.setConfig -->
 				<div class="tool_sep"></div>
 
 			</div>
+			
 			
 			<div id="two_paths_panel">
 			<div class="push_button" id="tool_alignpathl" title="Align Path left"><img src="images/rsz_path_l.png"/></div>
@@ -487,7 +493,7 @@ by creating the following file and adding by calls to svgEditor.setConfig -->
 		<div id="tools_left" class="tools_panel">
 			<div class="tool_button" id="tool_select" title="Select Tool"></div>
 			<div class="tool_button" id="tool_fhpath" title="Pencil Tool"></div>
-			<div class="tool_button" id="tool_line" title="Line Tool"></div>
+			<div class="tool_button flyout_current flyout_button tool_line" id="tool_line" title="Line Tool"></div>
 			<div class="tool_button flyout_current" id="tools_rect_show"
 				title="Square/Rect Tool">
 				<div class="flyout_arrow_horiz"></div>
@@ -643,13 +649,6 @@ by creating the following file and adding by calls to svgEditor.setConfig -->
 				<li class="push_button" id="tool_postop" title="Align Top"></li>
 				<li class="push_button" id="tool_posmiddle" title="Align Middle"></li>
 				<li class="push_button" id="tool_posbottom" title="Align Bottom"></li>
-				<li class="push_button" id="tool_poseqh" title="Equally Spaced h"></li>
-				<li class="push_button" id="tool_posveq" title="Equally Spaced v"></li>
-				<li class="push_button" id="tool_alignpathl" title="Align Path left"></li>
-				<li class="push_button" id="tool_alignapathr" title="Align Path right"></li>
-				<li class="push_button" id="tool_aligndpatht" title="Align Path top"></li>
-				<li class="push_button" id="tool_alignfpathb" title="Align Path bottom"></li>
-
 			</ul>
 		</div>
 

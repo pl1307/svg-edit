@@ -26,8 +26,6 @@
 // 12) coords.js
 // 13) recalculate.js
 
-//test mail notification
-
 (function () {
 
 if (!window.console) {
@@ -1095,8 +1093,13 @@ var addToSelection = this.addToSelection = function(elemsToAdd, showGrips) {
 	var i = elemsToAdd.length;
 	while (i--) {
 		var elem = elemsToAdd[i];
+				
+		if(elemsToAdd.length>1) {
+		var t=1+1;
+		}
+		
 		if (!elem || !svgedit.utilities.getBBox(elem)) {continue;}
-
+		
 		if (elem.tagName === 'a' && elem.childNodes.length === 1) {
 			// Make "a" element's child be the selected element
 			elem = elem.firstChild;
@@ -1336,8 +1339,10 @@ var getMouseTarget = this.getMouseTarget = function(evt) {
 		if (evt.altKey) { // duplicate when dragging
 			svgCanvas.cloneSelectedElements(0, 0);
 		}
-	
+		
+		if($('#svgcontent g')[0].getScreenCTM()) {
 		root_sctm = $('#svgcontent g')[0].getScreenCTM().inverse();
+		}
 		
 		var pt = svgedit.math.transformPoint( evt.pageX, evt.pageY, root_sctm ),
 			mouse_x = pt.x * current_zoom,
@@ -6992,6 +6997,17 @@ var changeSelectedAttribute = this.changeSelectedAttribute = function(attr, val,
 	}
 };
 
+function getCookie(cname) {		//edit form pl
+	var name = cname + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0; i<ca.length; i++) {
+		var c = ca[i];
+		while (c.charAt(0)==' ') c = c.substring(1);
+			if (c.indexOf(name) != -1) return c.substring(name.length,c.length);
+			}
+		return "";
+} 
+
 // Function: deleteSelectedElements
 // Removes all selected elements from the DOM and adds the change to the
 // history stack
@@ -7003,6 +7019,19 @@ this.deleteSelectedElements = function() {
 	for (i = 0; i < len; ++i) {
 		var selected = selectedElements[i];
 		if (selected == null) {break;}
+		
+		$("#svgcontent").find("defs").children().each(function(){
+			if($(this).attr('class')==selected.id) {
+				this.remove();
+				}
+		});
+		
+		if(getCookie(selected.id+"dashedLine")) {	//edit from pl
+			document.cookie = selected.id+"dashedLine"+"=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+		}
+		if(getCookie(selected.id+"angle")) {
+			document.cookie = selected.id+"angle"+"=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+		}
 
 		var parent = selected.parentNode;
 		var t = selected;
@@ -7583,7 +7612,6 @@ this.moveSelectedElements = function(dx, dy, undoable) {
 // selectedBBoxes[0].x += dx[0];
 // selectedBBoxes[0].y += dy[0];
 // }			
-				//alert(dx[i]+" "+dy[i]);
 				xform.setTranslate(dx[i], dy[i]);
 			} else {
 // if (i==0) {
@@ -7725,7 +7753,7 @@ this.alignSelectedElements = function(type, relative_to) {
 		dx[i] = 0;
 		dy[i] = 0;
 		switch (type) {
-			case 'e': 
+			case 'e': 	//equally spaced horizontal
 			
 				var copy = [];
 				
@@ -7760,7 +7788,7 @@ this.alignSelectedElements = function(type, relative_to) {
 				}
 				break;
 			
-			case 'v': 
+			case 'v': //equally spaced vertical
 			
 				var copy = [];
 				
@@ -7823,9 +7851,7 @@ this.alignSelectedElements = function(type, relative_to) {
 				var result = this.calcLinearEquation_horizontal(bboxes);	//get 2 arrays of linear equations for each line
 				var gl_array=result[0];
 				var gr_array=result[1];
-				
-				//for(i=0; i<gr_array.length;i++) {alert(gr_array[i].y0 + " "+ gr_array[i].y1);}
-				
+								
 				//--------------------------------------------------------------------------------------------------
 				//now the intercept points calculation
 						
@@ -7844,12 +7870,8 @@ this.alignSelectedElements = function(type, relative_to) {
 						
 							var max_ges = Math.min(max_y_left,max_y_right);	//interception intervall
 							var min_ges = Math.max(min_y_left,min_y_right);
-							//if(j==0 && i==1){alert(gl_array[j].m+ " "+gr_array[i].m);}
-							//if(j==0 && i==1) {alert(gl_array[j].m-gr_array[i].m);}
 							var s_x=(gr_array[i].n-gl_array[j].n)/(gl_array[j].m-gr_array[i].m); //y=m*x+n => x=(n1-n2)/(m2-m1)
 							var s_y=gr_array[i].m*s_x+gr_array[i].n;
-							//if(j==0 && i==1) {alert(s_x +" "+ s_y + " " + min_ges +" "+max_ges)}; // <------------
-							//if(j==0 && i==2) {alert(s_x +" "+ s_y + " " + min_ges +" "+max_ges)}; // <------------
 
 							//many constraints: greater than actual max_value => to find the intercept points with largest x-value
 							//intercept point has to be lesser than the right object bbox-begin
@@ -7857,11 +7879,9 @@ this.alignSelectedElements = function(type, relative_to) {
 							//and intercept point has to be lesser than the greatest x-value on the line
 							//s_x<=bboxes[index_right].x
 							if(s_x>max_s_x &&  min_ges<=s_y&&s_y<=max_ges&& s_x<=Math.max(gl_array[j].x,gl_array[j].x1)){
-							//alert(i +" " +j);
 								max_s_x=s_x;
 								max_s_y=s_y;
 								which_g=i;
-								//alert(s_x+" "+s_y);
 							}
 						}
 					}
@@ -7905,7 +7925,6 @@ this.alignSelectedElements = function(type, relative_to) {
 				var gl_array=result[0];
 				var gr_array=result[1];
 				
-				//for(i=0; i<gr_array.length;i++) {alert(gr_array[i].y0 + " "+ gr_array[i].y1);}
 				
 				//--------------------------------------------------------------------------------------------------
 				//now the intercept points calculation
@@ -7929,8 +7948,7 @@ this.alignSelectedElements = function(type, relative_to) {
 													
 							var s_x=(gl_array[j].n-gr_array[i].n)/(gr_array[i].m-gl_array[j].m); //y=m*x+n => x=(n1-n2)/(m2-m1)
 							var s_y=gl_array[j].m*s_x+gl_array[j].n;
-							//if(j==0 && i==1) {alert(s_x +" "+ s_y + " " + min_ges +" "+max_ges + " " + gr_array[i].m)}; // <------------
-							//if(j==0 && i==2) {alert(s_x +" "+ s_y + " " + min_ges +" "+max_ges)}; // <------------
+							
 
 							//many constraints: greater than actual max_value => to find the intercept points with largest x-value
 							//intercept point has to be lesser than the right object bbox-begin
@@ -7938,11 +7956,9 @@ this.alignSelectedElements = function(type, relative_to) {
 							//and intercept point has to be lesser than the greatest x-value on the line
 							//s_x<=bboxes[index_right].x
 							if(s_x>max_s_x &&  min_ges<=s_y&&s_y<=max_ges&& s_x>=Math.min(gr_array[i].x,gr_array[i].x1)){
-								//alert(s_x+" "+s_y);
 								max_s_x=s_x;
 								max_s_y=s_y;
 								which_g=j;
-								//alert(i + " " +j);
 							}
 						}
 					}
@@ -8006,18 +8022,15 @@ this.alignSelectedElements = function(type, relative_to) {
 							var s_x=(gt_array[i].n-gb_array[j].n)/(gb_array[j].m-gt_array[i].m); //y=m*x+n => x=(n1-n2)/(m2-m1)
 							var s_y=gt_array[i].m*s_x+gt_array[i].n;
 							
-							//alert(s_x + " "+ s_y +" "+ max_ges + min_ges);
 							//many constraints: greater than actual max_value => to find the intercept points with largest x-value
 							//intercept point has to be lesser than the right object bbox-begin
 							//intercept point has to be in a certain y-intervall -> maximum of minimum of the y-value from both lines and minimum of maximum of the y-value from both lines
 							//and intercept point has to be lesser than the greatest x-value on the line
 							//s_x<=bboxes[index_right].x
 							if(s_y>max_s_y &&  min_ges<=s_x&&s_x<=max_ges&& s_y<=Math.max(gt_array[i].y0,gt_array[i].y1)){
-								//alert(s_x+" "+s_y + " " + Math.max(gt_array[i].y0,gt_array[i].y1));
 								max_s_x=s_x;
 								max_s_y=s_y;
 								which_g=j;
-								//alert(j);
 							}
 						}
 					}
@@ -8061,9 +8074,6 @@ this.alignSelectedElements = function(type, relative_to) {
 				//--------------------------------------------------------------------------------------------------
 				//now the intercept points calculation
 				
-				for(i=0; i<gb_array.length;i++) {
-				//alert(gb_array[i].y0 + " " + gb_array[i].y1);
-				}
 				
 				var max_s_x=0;
 				var max_s_y=0;
@@ -8092,7 +8102,6 @@ this.alignSelectedElements = function(type, relative_to) {
 								max_s_x=s_x;
 								max_s_y=s_y;
 								which_g=i;
-								//alert(j+ " "+ i);
 							}
 						}
 					}
@@ -8129,8 +8138,6 @@ this.alignSelectedElements = function(type, relative_to) {
 };
 
 this.calcLinearEquation_horizontal = function(bboxes) {
-
-				//for(i=0; i<selectedElements[0].animatedPoints.length;i++) {alert(selectedElements[0].animatedPoints[i].x);}
 				
 
 				var index_right = bboxes[0].x>bboxes[1].x ? 0 : 1;
@@ -8233,9 +8240,7 @@ this.calcLinearEquation_horizontal = function(bboxes) {
 					tmp_max_i=z;
 				}
 				
-				//alert(list_left[tmp_min_i].x);
 				for(i=tmp_min_i;i!=tmp_max_i;i=(i+1)%len) { //iterate from minimum to maximum
-					//alert(list_left[i].x + " " +i);
 					if(list_left[i].x) {
 					p_array.push(list_left[i]);
 					}
@@ -8362,7 +8367,6 @@ this.calcLinearEquation_vertical = function(bboxes) {
 								
 				var p_array = [];		//save points which are facing to the other object
 				
-				//alert(tmp_max +" "+ tmp_min);
 				
 				var j=-1;
 				
@@ -8374,11 +8378,8 @@ this.calcLinearEquation_vertical = function(bboxes) {
 					
 				}
 				
-				//alert(list_left[tmp_min_i].x);
 				//it is simply (i+j)%len, because of js modulo bug
 				for(i=tmp_min_i;i!=tmp_max_i;i=(((i+j)%len)+len)%len) { //iterate from minimum to maximum
-					//alert(i);
-					//alert(list_bottom[i].y + " " +i);
 					if(list_bottom[i].y) {
 					p_array.push(list_bottom[i]);
 					}

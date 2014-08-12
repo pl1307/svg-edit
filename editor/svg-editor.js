@@ -30,6 +30,7 @@ TO-DOS
 		return;
 	}
 	
+	var svgFactory_;
 
 	
 	window.svgEditor = (function($) {
@@ -1153,7 +1154,13 @@ TO-DOS
 				//if (!noHiding) {
 					$('.tools_flyout', '.flyout_arrow_horiz').toggle();
 					$('.flyout_button').click(function() {
+						if($(this).hasClass("tool_line")) {
+							$(tools_line).toggle();
+						}else{
+							var x = $(this).parent();
+							var v = 1;
 						  $(this).parent().hide();
+						  }
 					});
 					
 				//}
@@ -1571,10 +1578,13 @@ TO-DOS
 
 				var is_node = currentMode == 'pathedit'; //elem ? (elem.id && elem.id.indexOf('pathpointgrip') == 0) : false;
 				var menu_items = $('#cmenu_canvas li');
-				$('#selected_panel, #multiselected_panel, #two_paths_panel, #g_panel, #rect_panel, #circle_panel,'+
+				$('#selected_panel, #multiselected_panel, #two_paths_panel, #tool_create_angle, #g_panel, #rect_panel, #circle_panel,'+
 					'#ellipse_panel, #line_panel, #text_panel, #image_panel, #container_panel,'+
 					' #use_panel, #a_panel').hide();
 				if (elem != null) {
+					if(elem=="[object SVGPolygonElement]" || elem=="[object SVGPathElement]") {
+						$(tool_create_angle).show();
+					}else{$(tool_create_angle).hide();}
 					var elname = elem.nodeName;
 					// If this is a link with no transform and one child, pretend
 					// its child is selected
@@ -3510,6 +3520,155 @@ TO-DOS
 					});
 				}
 			};
+			
+			function getCookie(cname) {
+				var name = cname + "=";
+				var ca = document.cookie.split(';');
+				for(var i=0; i<ca.length; i++) {
+					var c = ca[i];
+					while (c.charAt(0)==' ') c = c.substring(1);
+						if (c.indexOf(name) != -1) return c.substring(name.length,c.length);
+					}
+				return "";
+			} 
+			
+			var dashedLine = function() {
+			
+			if (!(getCookie(selectedElement.id+"dashedLine")=="on")) {
+				document.cookie=selectedElement.id+"dashedLine"+"="+"on";
+				$(selectedElement).attr({'stroke-dasharray': "6 1 0 1"});
+			}else{
+				document.cookie = selectedElement.id+"dashedLine"+"=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+				$(selectedElement).attr({'stroke-dasharray': ""});
+			}};
+			
+			var createAngle = function() {
+				if (!(getCookie(selectedElement.id+"angle")=="")) {
+					var id_array = getCookie(selectedElement.id+"angle").split(',');
+					for(i=0; i<id_array.length-1;i++) {	//-1 because the last char in the cookie is ','
+						var id = "."+id_array[i];
+						$(id).remove();
+					}
+					document.cookie = selectedElement.id+"angle"+"=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+				}else{
+			
+				if(selectedElement=="[object SVGPolygonElement]"){
+					var orginal = selectedElement.animatedPoints;
+				}else if(selectedElement=="[object SVGPathElement]") {
+					var orginal = selectedElement.animatedPathSegList;
+				}
+				var list = [];
+				for(i=0;i<orginal.length;i++) {
+					if(orginal[i].x && orginal[i].y){	//there are null values in the animatedPathSegList
+						list.push(orginal[i]);
+					}
+				}
+				var len = list.length;
+				var svg   = document.documentElement;
+				var svgNS = svg.namespaceURI;
+				var id_a = [];
+				var id_string="";
+								
+				for(i=0; i<len-1; i++) {	//until len-2 because list[0]==list[len-1]
+				var x1 = list[i].x + 0.3*(list[(i-1 < 0)?len-2:i-1].x-list[i].x);	//arbitrary factor 0.3 and 0.5
+				var y1 = list[i].y + 0.3*(list[(i-1 < 0)?len-2:i-1].y-list[i].y);	//len-2 because list[0]==list[len-1]
+				var x2 = list[i].x + 0.3*(list[((i+1)==len)?0:i+1].x-list[i].x);
+				var y2 = list[i].y + 0.3*(list[((i+1)==len)?0:i+1].y-list[i].y);
+				
+				
+				//------------------ helppoints for calculation controlpoint ----------------
+				var xh1 = list[i].x + 0.5*(list[(i-1 < 0)?len-2:i-1].x-list[i].x);
+				var yh1 = list[i].y + 0.5*(list[(i-1 < 0)?len-2:i-1].y-list[i].y);
+				var xh2 = list[i].x + 0.5*(list[((i+1)==len)?0:i+1].x-list[i].x);
+				var yh2 = list[i].y + 0.5*(list[((i+1)==len)?0:i+1].y-list[i].y);
+				
+				
+				var xc = xh1 + 0.5*(xh2-xh1); //controlpoint
+				var yc = yh2 + 0.5*(yh1-yh2);
+				
+				
+				var shape = document.createElementNS(svgedit.NS.SVG,'path');
+				shape.setAttributeNS(null, "d", "M " + x1 + " " + y1 + " Q " + xc + " " + yc + " " + x2 + " " + y2);
+				shape.setAttributeNS(null, "fill", "none");
+				shape.setAttributeNS(null, "stroke", "black");
+				var id = svgCanvas.getNextId();
+				shape.setAttribute("class", id);
+				shape.setAttribute("id", id);
+				id_string=id_string+id+","
+				$("#svgcontent").children().append(shape);
+				}
+				document.cookie=selectedElement.id+"angle"+"="+id_string;
+				id_a = id_string.split(',');
+				
+				var id_array = [];
+				for(i=0; i<id_a.length-1;i++) {
+					id_array.push($("g").find("."+id_a[i])[0]);
+				}
+	
+				//svgCanvas.addToSelection(id_array,true);
+			
+				//svgCanvas.groupSelectedElements();
+
+				
+				
+				
+				/*$.getScript("https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG.js").done(function(script, textStatus) {
+				
+					MathJax.Hub.Config({
+					tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+					//SVG: {scale: 1},
+					//font: "TeX"
+					});
+					$('#svgcontent').children().append("$\\alpha$");
+					MathJax.Hub.queue.Push(function() {
+						var mathjaxMath = $('.MathJax_SVG');
+						var svg = $(mathjaxMath.html());
+						svg.find('use').each(function() {
+							var x, y, id, transform;
+
+							// TODO: find a less pragmatic and more elegant solution to this.
+							if ($(this).attr('href')) {
+								id = $(this).attr('href').slice(1); // Works in Chrome.
+							} else {
+								id = $(this).attr('xlink:href').slice(1); // Works in Firefox.
+							}
+							
+							var glymph = $('#' + id).clone().removeAttr('id');
+							x = $(this).attr('x');
+							y = $(this).attr('y');
+							transform = $(this).attr('transform');
+							if (transform && ( x || y )) {
+								glymph.attr('transform', transform + ' translate(' + x + ',' + y + ')');
+							}
+							else if (transform) {
+								glymph.attr('transform', transform);
+							}
+							else if (x || y) {
+								glymph.attr('transform', 'translate(' + x + ',' + y + ')');
+							}
+							$(this).replaceWith(glymph);
+						});
+						// Remove the style tag because it interferes with SVG-Edit.
+						svg.removeAttr('style');
+						svg.attr('xmlns', 'http://www.w3.org/2000/svg');
+						svgCanvas.importSvgString($('<div>').append(svg.clone()).html(), true);
+						svgCanvas.ungroupSelectedElement();
+						// TODO: To undo the adding of the Formula you now have to undo twice.
+						// This should only be once!
+						//selectedElement.getBBox().height=20;
+						svgCanvas.moveSelectedElements(200, 200, true);
+						$(selectedElement).css("width",10);
+						//alert(selectedElement.style.width);
+						//svgCanvas.clearSelection(); 
+						//svgCanvas.addToSelection(mathjax_bbox,true);
+						//svgCanvas.changeSelectedAttribute('width','10');
+						});
+					})
+					.fail(function(jqxhr, settings, exception){
+						alert(exception);
+					});*/
+					}};
+			
 
 			var moveSelected = function(dx,dy) {
 				if (selectedElement != null || multiselected) {
@@ -4511,6 +4670,8 @@ TO-DOS
 					{sel: '#tool_move_bottom', fn: moveToBottomSelected, evt: 'click', key: 'ctrl+shift+['},
 					{sel: '#tool_topath', fn: convertToPath, evt: 'click'},
 					{sel: '#tool_make_link,#tool_make_link_multi', fn: makeHyperlink, evt: 'click'},
+					{sel: '#tool_dashed_line', fn: dashedLine, evt: 'click'},
+					{sel: '#tool_create_angle', fn: createAngle, evt: 'click'},
 					{sel: '#tool_undo', fn: clickUndo, evt: 'click', key: ['Z', true]},
 					{sel: '#tool_redo', fn: clickRedo, evt: 'click', key: ['Y', true]},
 					{sel: '#tool_clone,#tool_clone_multi', fn: clickClone, evt: 'click', key: ['D', true]},
