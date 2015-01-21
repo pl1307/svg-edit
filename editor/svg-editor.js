@@ -3570,32 +3570,36 @@ TO-DOS
 				var id_string="";
 								
 				for(i=0; i<len-1; i++) {	//until len-2 because list[0]==list[len-1]
-				var x1 = list[i].x + 0.3*(list[(i-1 < 0)?len-2:i-1].x-list[i].x);	//arbitrary factor 0.3 and 0.5
-				var y1 = list[i].y + 0.3*(list[(i-1 < 0)?len-2:i-1].y-list[i].y);	//len-2 because list[0]==list[len-1]
-				var x2 = list[i].x + 0.3*(list[((i+1)==len)?0:i+1].x-list[i].x);
-				var y2 = list[i].y + 0.3*(list[((i+1)==len)?0:i+1].y-list[i].y);
 				
+				var l1x = 0.2*(list[(i-1 < 0)?len-2:i-1].x-list[i].x);
+				var l1y = 0.2*(list[(i-1 < 0)?len-2:i-1].y-list[i].y);
+				var l1 = Math.sqrt(l1x*l1x+l1y*l1y);
+				var l2x = 0.2*(list[((i+1)==len)?0:i+1].x-list[i].x);
+				var l2y = 0.2*(list[((i+1)==len)?0:i+1].y-list[i].y);
+				var l2 = Math.sqrt(l2x*l2x+l2y*l2y);
+				var r = (l1<=l2) ? l1 : l2;
 				
-				//------------------ helppoints for calculation controlpoint ----------------
-				var xh1 = list[i].x + 0.5*(list[(i-1 < 0)?len-2:i-1].x-list[i].x);
-				var yh1 = list[i].y + 0.5*(list[(i-1 < 0)?len-2:i-1].y-list[i].y);
-				var xh2 = list[i].x + 0.5*(list[((i+1)==len)?0:i+1].x-list[i].x);
-				var yh2 = list[i].y + 0.5*(list[((i+1)==len)?0:i+1].y-list[i].y);
-				
-				
-				var xc = xh1 + 0.5*(xh2-xh1); //controlpoint
-				var yc = yh2 + 0.5*(yh1-yh2);
-				
+				var x1 = list[i].x + 0.2*(list[(i-1 < 0)?len-2:i-1].x-list[i].x);	//arbitrary factor 0.3 and 0.5
+				var y1 = list[i].y + 0.2*(list[(i-1 < 0)?len-2:i-1].y-list[i].y);	//len-2 because list[0]==list[len-1]
+				var x2 = list[i].x + 0.2*(list[((i+1)==len)?0:i+1].x-list[i].x);
+				var y2 = list[i].y + 0.2*(list[((i+1)==len)?0:i+1].y-list[i].y);
 				
 				var shape = document.createElementNS(svgedit.NS.SVG,'path');
-				shape.setAttributeNS(null, "d", "M " + x1 + " " + y1 + " Q " + xc + " " + yc + " " + x2 + " " + y2);
+				shape.setAttributeNS(null, "d", "M" + x1 + "," + y1 + " A" + r + "," + r + " " + "0 0,0" + x2 + "," + y2);
 				shape.setAttributeNS(null, "fill", "none");
 				shape.setAttributeNS(null, "stroke", "black");
+				
+				/*var shape2 = document.createElementNS(svgedit.NS.SVG,'path');
+				shape2.setAttributeNS(null, "d", "M" + x1 + "," + y1 + " A" + r + "," + r + " " + "0 1,1" + x2 + "," + y2);
+				shape2.setAttributeNS(null, "fill", "none");
+				shape2.setAttributeNS(null, "stroke", "black");*/
+				
 				var id = svgCanvas.getNextId();
 				shape.setAttribute("class", id);
 				shape.setAttribute("id", id);
 				id_string=id_string+id+","
 				$("#svgcontent").children().append(shape);
+				//$("#svgcontent").children().append(shape2);
 				}
 				document.cookie=selectedElement.id+"angle"+"="+id_string;
 				id_a = id_string.split(',');
@@ -3668,7 +3672,48 @@ TO-DOS
 						alert(exception);
 					});*/
 					}};
-			
+					
+			var createSystem = function() {
+				var shape = document.createElementNS(svgedit.NS.SVG,'line');
+				shape.setAttributeNS(null, "x1", "0");
+				shape.setAttributeNS(null, "y1", "240");
+				shape.setAttributeNS(null, "x2", "640");
+				shape.setAttributeNS(null, "y2", "240");
+				shape.setAttributeNS(null, "stroke-width", "3");
+				shape.setAttributeNS(null, "stroke", "black");
+				$("#svgcontent").children().append(shape);
+				
+				var shape2 = document.createElementNS(svgedit.NS.SVG,'line');
+				shape2.setAttributeNS(null, "x1", "320");
+				shape2.setAttributeNS(null, "y1", "0");
+				shape2.setAttributeNS(null, "x2", "320");
+				shape2.setAttributeNS(null, "y2", "480");
+				shape2.setAttributeNS(null, "stroke-width", "3");
+				shape2.setAttributeNS(null, "stroke", "black");
+				$("#svgcontent").children().append(shape2);
+				
+				for(i=0; i<20; i++) {
+					var x = i*32;
+					var stroke_hori = document.createElementNS(svgedit.NS.SVG,'line');
+					stroke_hori.setAttributeNS(null, "x1", x);
+					stroke_hori.setAttributeNS(null, "y1", "245");
+					stroke_hori.setAttributeNS(null, "x2", x);
+					stroke_hori.setAttributeNS(null, "y2", "235");
+					stroke_hori.setAttributeNS(null, "stroke-width", "3");
+					stroke_hori.setAttributeNS(null, "stroke", "black");
+					$("#svgcontent").children().append(stroke_hori);
+					
+					var y=i*24;
+					var stroke_vert = document.createElementNS(svgedit.NS.SVG,'line');
+					stroke_vert.setAttributeNS(null, "x1", "315");
+					stroke_vert.setAttributeNS(null, "y1", y);
+					stroke_vert.setAttributeNS(null, "x2", "325");
+					stroke_vert.setAttributeNS(null, "y2", y);
+					stroke_vert.setAttributeNS(null, "stroke-width", "3");
+					stroke_vert.setAttributeNS(null, "stroke", "black");
+					$("#svgcontent").children().append(stroke_vert);
+				}
+			};			
 
 			var moveSelected = function(dx,dy) {
 				if (selectedElement != null || multiselected) {
@@ -4672,6 +4717,7 @@ TO-DOS
 					{sel: '#tool_make_link,#tool_make_link_multi', fn: makeHyperlink, evt: 'click'},
 					{sel: '#tool_dashed_line', fn: dashedLine, evt: 'click'},
 					{sel: '#tool_create_angle', fn: createAngle, evt: 'click'},
+					{sel: '#tool_create_system', fn: createSystem, evt: 'click'},
 					{sel: '#tool_undo', fn: clickUndo, evt: 'click', key: ['Z', true]},
 					{sel: '#tool_redo', fn: clickRedo, evt: 'click', key: ['Y', true]},
 					{sel: '#tool_clone,#tool_clone_multi', fn: clickClone, evt: 'click', key: ['D', true]},
